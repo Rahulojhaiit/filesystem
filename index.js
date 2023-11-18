@@ -4,8 +4,12 @@ const { PrismaClient } = require("@prisma/client");
 
 const app = express();
 app.use(fileupload());
+const fs = require("fs");
 
 const prisma = new PrismaClient();
+
+app.use("/public", express.static(__dirname + "/public"));
+app.use(express.static(__dirname + "/public"));
 
 const PORT = 3000;
 
@@ -48,6 +52,18 @@ app.post("/files/upload", async (req, res) => {
     filetype,
   };
 
+  filePath = __dirname + "/public/" + filename;
+  console.log(filePath);
+
+  fs.writeFile(filePath, data, (err) => {
+    if (err) console.log(err);
+    else {
+      console.log("File written successfully\n");
+      console.log("The written has the following contents:");
+      console.log(fs.readFileSync(filename, "utf8"));
+    }
+  });
+
   try {
     const newFile = await prisma.file.create({
       data: fileObject,
@@ -55,6 +71,7 @@ app.post("/files/upload", async (req, res) => {
 
     res.status(201).send({ fileId: newFile.id });
   } catch (error) {
+    console.log(error);
     res.status(500).send("Faced some error in the server");
   }
 });
@@ -70,8 +87,20 @@ app.get("/files/:fileId", async (req, res) => {
       id: fileId,
     },
   });
-  if (data) res.status(200).send({ fileData: data.data });
-  else res.status(404).send({ message: "File Not found" });
+
+  filePath = __dirname + "/public/" + data.filename;
+  console.log(filePath);
+
+  if (data) {
+    fs.readFile(filePath, "utf8", (err, data) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      console.log(data);
+      res.status(200).send({ fileData: data });
+    });
+  } else res.status(404).send({ message: "File Not found" });
 });
 
 // Update File API: Update an existing file or its metadata.
