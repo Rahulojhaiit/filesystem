@@ -1,0 +1,17 @@
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres@localhost:5432/test"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model File {
+  id        String   @id @default(uuid())
+  filename  String
+  createdAt DateTime @default(now())
+  data      Bytes
+  size      Int
+  filetype  String
+}
